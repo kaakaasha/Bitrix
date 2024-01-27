@@ -110,9 +110,16 @@ $APPLICATION->SetTitle("Импорт");
                 $PROPER[91] = $product_id; //sku
                 
                 $Size = explode(",",$strin[3]);
-                $Length = explode(",",$strin[4]);
                 $Width = explode(",",$strin[5]);
-                $Length2 = explode(",",$strin[4]);
+            
+                // if($strin[4][0] > 30 ){
+                    $Length2 = explode(",",$strin[4]);
+                    
+                // }
+                // else{
+                    $Length = explode(",",$strin[4]);
+                    
+                // }
                 
                 switch($kto){ 
                     case"Кольца":
@@ -205,7 +212,7 @@ $APPLICATION->SetTitle("Импорт");
 
                         $LengtLengt = count($Length);//браслет
                         $kol=0;//количество повторений цикла
-                        
+                        print_r($Length);
                         while ($LengtLengt<>0){
 
                             switch($Length[$kol]){ //длина браслета
@@ -409,7 +416,7 @@ $APPLICATION->SetTitle("Импорт");
                                     case "11":
                                         $PROPER[277] = 145;                        
                                     break;
-                                } print_r($PROPER[283]);
+                                } 
 
                                     // добавляем нужное кол-во торговых предложений
                                 $arLoadProductArray = array(

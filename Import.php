@@ -55,47 +55,59 @@ $APPLICATION->SetTitle("Импорт");
                 //разделы
                 switch($strin[1]){
                     case "Браслеты":
-                        $strin[1]= "91,102" ;
+                        $strin[1]= "91" ;
                         break;
                     case "Серьги":
-                        $strin[1]= "98,102" ;                       
+                        $strin[1]= "98" ;                       
                         break;
                     case "Комплекты":
-                        $strin[1]= "94,102" ;                        
+                        $strin[1]= "94" ;                        
                         break;
                     case "Цепочки":
-                        $strin[1]= "99,102" ;                        
+                        $strin[1]= "99" ;                        
                         break;
                     case "Кольца":
-                        $strin[1]= "93,102" ;                        
+                        $strin[1]= "93" ;                        
                         break;
                     case "Кулоны":
-                        $strin[1]= "95,102" ;                        
+                        $strin[1]= "95" ;                        
                         break;
                     case "Часы":
-                        $strin[1]= "100,102" ;                        
+                        $strin[1]= "100" ;                        
                         break;
                     case "Броши":
-                        $strin[1]= "92,102" ;                        
+                        $strin[1]= "92" ;                        
                         break;
                     case "Подарочная упаковка":
-                        $strin[1]= "96,102" ;                        
+                        $strin[1]= "96" ;                        
                         break;
                     case "Подставки":
-                        $strin[1]= "97,102" ;                        
+                        $strin[1]= "97" ;                        
                         break;
                 }
     
+                
+              
                 // Добавляем товар-родитель, у которго будут торг. предложения
                 $product_id = $ciBlockElement->Add(
                     array(
                         "IBLOCK_ID" => 13, // IBLOCK товаров
-                        "IBLOCK_SECTION_ID" => $strin[1],
+                        "IBLOCK_SECTION" => array(0 => $strin[1], 1 => 102),
                         "NAME" => $strin[9],
+                        "CURRENCY" => "RUB",
+                        "PRICE" => $strin[7],
                         "ACTIVE" => "Y",
                         "PROPERTY_VALUES"=> $PROP,  // Добавим нашему элементу заданные свойства
                         "PREVIEW_PICTURE" => CFile::MakeFileArray($_SERVER["DOCUMENT_ROOT"]."/upload/pics_catalog/".$strin[6])  // ссылка на детальную картинку
                         
+                    )
+                );
+                CPrice::Add(
+                    array(
+                        "CURRENCY" => "RUB",
+                        "PRICE" => $strin[7],
+                        "CATALOG_GROUP_ID" => 1,
+                        "PRODUCT_ID" => $product_id
                     )
                 );
 
@@ -109,15 +121,15 @@ $APPLICATION->SetTitle("Импорт");
 
                 $PROPER[91] = $product_id; //sku
                 
-                $Size = explode(",",$strin[3]);
-                $Width = explode(",",$strin[5]);
+                $Size = explode(", ",$strin[3]);
+                $Width = explode(", ",$strin[5]);
             
                 // if($strin[4][0] > 30 ){
-                    $Length2 = explode(",",$strin[4]);
+                    $Length2 = explode(", ",$strin[4]);
                     
                 // }
                 // else{
-                    $Length = explode(",",$strin[4]);
+                    $Length = explode(", ",$strin[4]);
                     
                 // }
                 
@@ -1316,6 +1328,7 @@ $APPLICATION->SetTitle("Импорт");
 
         }
         
+    echo"Товары добавлены!";
     }
              
    

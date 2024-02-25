@@ -14,13 +14,17 @@ $APPLICATION->SetTitle("Импорт");
     if(isset($_POST['butimp'])) { 
 
         $id = $_POST['Link'];
-        $csv = file_get_contents('https://docs.google.com/spreadsheets/d/' . $id . '/export?format=csv&gid=0');
+        
+        $csv = file_get_contents(substr($id, 0, -10).'export?format=csv&gid=0');
         $csv = explode("\r\n", $csv);
         $array = array_map('str_getcsv', $csv);
-            
+           
+        $l=20;
             
         foreach ($array as &$strin) {
-            if($strin[0]<>"Бренд"){
+            
+            // if(($strin[0]<>"Бренд") || ($strin[0] <>"Идентификатор таблицы (введите в соседней ячейке)")){
+                if($strin[0] <> "Бренд"){
                 foreach($strin as &$value){
                     switch($value){
                         case "Дубайское золото":
@@ -46,11 +50,47 @@ $APPLICATION->SetTitle("Импорт");
     
                 $ciBlockElement = new CIBlockElement;
 
-                $PROP[61] = $strin[11];
+                $PROP[61] = $strin[10];
                 $PROP[270] = $strin[2];
-                $PROP[279] = $strin[0];
+                $PROP[279] = $strin[0]."ㅤㅤㅤ".$strin[9];
+                $PROP[291] = $strin[9];
+                
+                // цены для фильтра
+                if($strin[6]<=150){
+                    $PROP[295]=array(0 => 378);
+                    if($strin[6]==150){
+                        $PROP[295]=array(0 => 378, 1 => 379);
+                    }
+                }
+                elseif(($strin[6]>=150) && ($strin[6]<=300)){
+                    $PROP[295]=array(0 => 379);
+                    if($strin[6]==300){
+                        $PROP[295]=array(0 => 380, 1 => 379);
+                    }
+                }
+                elseif(($strin[6]>=300) && ($strin[6]<=600)){
+                    $PROP[295]=array(0 => 380);
+                    if($strin[6]==600){
+                        $PROP[295]=array(0 => 380, 1 => 381);
+                    }
+                }
+                elseif($strin[6]>600){
+                    $PROP[295]=array(0 => 381);
+                }
 
                 $kto = $strin[1];
+
+
+                $Pick = date("m.d.y")."/".$strin[6];
+                if($strin[4]<>null){
+                    $Pick = $Pick." ".$strin[4];  
+                }
+                if($strin[5]<>null){
+                    $Pick = $Pick." ".$strin[5];  
+                }
+                if($strin[3]<>null){
+                    $Pick = $Pick." ".$strin[3];  
+                }
 
                 //разделы
                 switch($strin[1]){
@@ -70,7 +110,8 @@ $APPLICATION->SetTitle("Импорт");
                         $strin[1]= "93" ;                        
                         break;
                     case "Кулоны":
-                        $strin[1]= "95" ;                        
+                        $strin[1]= "95" ; 
+                        $Pick = $Pick."+";                       
                         break;
                     case "Часы":
                         $strin[1]= "100" ;                        
@@ -85,27 +126,84 @@ $APPLICATION->SetTitle("Импорт");
                         $strin[1]= "97" ;                        
                         break;
                 }
-    
+
                 
-              
+                // $Pick = $Pick.".jpg";
+                if (file_exists("/home/bitrix/www/upload/pics_catalog/".$Pick." ".preg_replace('/\D+/', '', $strin[9]).".jpg")) {
+                    $Pick = $Pick." ".preg_replace('/\D+/', '', $strin[9]);
+                    // print_r($Pick);
+                    
+                }
+                
+
+                while($l>0){
+                    $l--;
+                    
+                    if (file_exists("/home/bitrix/www/upload/pics_catalog/".$Pick." (".$l.").jpg")) {
+                        $Pick = $Pick." (".$l.").jpg";
+                        break 1;
+                    }
+                    elseif (file_exists("/home/bitrix/www/upload/pics_catalog/".$Pick."(".$l.").jpg")) {
+                        $Pick = $Pick."(".$l.").jpg";
+                        break 1;
+                        
+                    }
+                    elseif($l<=0){
+                        $Pick = $Pick.".jpg";
+                        $l=20;
+                        break 1;
+                        
+                    }
+                    
+                   
+                }
+
+                // while($l<=15){
+                //     $l++;
+                //     if($l==0){
+                //         $Pick = $Pick.".jpg";
+                //         break 1;
+                //     }
+                //     elseif (file_exists("/home/bitrix/www/upload/pics_catalog/".$Pick." (".$l.").jpg")) {
+                //         $Pick = $Pick." (".$l.").jpg";
+                //         break 1;
+                //     }
+                //     elseif (file_exists("/home/bitrix/www/upload/pics_catalog/".$Pick."(".$l.").jpg")) {
+                //         $Pick = $Pick."(".$l.").jpg";
+                //         break 1;
+                //     }
+                //     if($l==14){
+                //         $Pick = $Pick.".jpg";
+                //         $l=-1;
+                //         break 1;
+                        
+                //     }
+                    
+                   
+                // }
+                
+               
+
                 // Добавляем товар-родитель, у которго будут торг. предложения
                 $product_id = $ciBlockElement->Add(
                     array(
                         "IBLOCK_ID" => 13, // IBLOCK товаров
                         "IBLOCK_SECTION" => array(0 => $strin[1], 1 => 102),
-                        "NAME" => $strin[9],
+                        "NAME" => $strin[8],
                         "CURRENCY" => "RUB",
-                        "PRICE" => $strin[7],
+                        "PRICE" => $strin[6],
                         "ACTIVE" => "Y",
                         "PROPERTY_VALUES"=> $PROP,  // Добавим нашему элементу заданные свойства
-                        "PREVIEW_PICTURE" => CFile::MakeFileArray($_SERVER["DOCUMENT_ROOT"]."/upload/pics_catalog/".$strin[6])  // ссылка на детальную картинку
+                        "PREVIEW_PICTURE" => CFile::MakeFileArray($_SERVER["DOCUMENT_ROOT"]."/upload/pics_catalog/".$Pick)  // ссылка на детальную картинку
+                        //"PREVIEW_TEXT" => $strin[9]
                         
                     )
                 );
+                
                 CPrice::Add(
                     array(
                         "CURRENCY" => "RUB",
-                        "PRICE" => $strin[7],
+                        "PRICE" => $strin[6],
                         "CATALOG_GROUP_ID" => 1,
                         "PRODUCT_ID" => $product_id
                     )
@@ -123,15 +221,8 @@ $APPLICATION->SetTitle("Импорт");
                 
                 $Size = explode(", ",$strin[3]);
                 $Width = explode(", ",$strin[5]);
-            
-                // if($strin[4][0] > 30 ){
-                    $Length2 = explode(", ",$strin[4]);
-                    
-                // }
-                // else{
-                    $Length = explode(", ",$strin[4]);
-                    
-                // }
+                $Length2 = explode(", ",$strin[4]);
+                $Length = explode(", ",$strin[4]);
                 
                 switch($kto){ 
                     case"Кольца":
@@ -178,7 +269,7 @@ $APPLICATION->SetTitle("Импорт");
                                 // добавляем нужное кол-во торговых предложений
                             $arLoadProductArray = array(
                                 "IBLOCK_ID"      => 14, // IBLOCK торговых предложений
-                                "NAME"           => $strin[9],
+                                "NAME"           => $strin[8],
                                 "ACTIVE"         => "Y",
                                 'PROPERTY_VALUES'=> $PROPER
                                 
@@ -205,7 +296,7 @@ $APPLICATION->SetTitle("Импорт");
                             CPrice::Add(
                                 array(
                                     "CURRENCY" => "RUB",
-                                    "PRICE" => $strin[7],
+                                    "PRICE" => $strin[6],
                                     "CATALOG_GROUP_ID" => 1,
                                     "PRODUCT_ID" => $product_offer_id
                                 )
@@ -1045,9 +1136,9 @@ $APPLICATION->SetTitle("Импорт");
                                     case "10":
                                         $PROPER[277] = 144;                        
                                     break;
-                                    case "11":
-                                        $PROPER[277] = 145;                        
-                                    break;
+                                    // case "11":
+                                    //     $PROPER[277] = 145;                        
+                                    // break;
                                 }
 
                                 foreach($Length_prom as &$PROPER[276]){
@@ -1056,7 +1147,7 @@ $APPLICATION->SetTitle("Импорт");
                                     // добавляем нужное кол-во торговых предложений
                                 $arLoadProductArray = array(
                                     "IBLOCK_ID"      => 14, // IBLOCK торговых предложений
-                                    "NAME"           => $strin[9],
+                                    "NAME"           => $strin[8],
                                     "ACTIVE"         => "Y",
                                     'PROPERTY_VALUES'=> $PROPER
                                     
@@ -1083,7 +1174,7 @@ $APPLICATION->SetTitle("Импорт");
                                 CPrice::Add(
                                     array(
                                         "CURRENCY" => "RUB",
-                                        "PRICE" => $strin[7],
+                                        "PRICE" => $strin[6],
                                         "CATALOG_GROUP_ID" => 1,
                                         "PRODUCT_ID" => $product_offer_id
                                     )
@@ -1119,10 +1210,10 @@ $APPLICATION->SetTitle("Импорт");
                                     $Length2_prom = [147];
                                     $PROPER[285] = 347;                       
                                 break;
-                                case "42":
-                                    $Length2_prom = [148];
-                                    $PROPER[285] = 348;                        
-                                break;
+                                // case "42":
+                                //     $Length2_prom = [148];
+                                //     $PROPER[285] = 348;                        
+                                // break;
                                 case "45":
                                     $Length2_prom = [149];
                                     $PROPER[285] = 349;                        
@@ -1157,11 +1248,13 @@ $APPLICATION->SetTitle("Импорт");
                                     $PROPER[285] = 356;
                                 break;
                                 case "40+5":
-                                    $Length2_prom = [147,148,149];
+                                    // $Length2_prom = [147,148,149];
+                                    $Length2_prom = [147,149];
                                     $PROPER[285] = 357;                       
                                 break;
                                 case "42+5":
-                                    $Length2_prom = [148,149];
+                                    // $Length2_prom = [148,149];
+                                    $Length2_prom = [149];
                                     $PROPER[285] = 358;                        
                                 break;
                                 case "45+5":
@@ -1230,9 +1323,9 @@ $APPLICATION->SetTitle("Импорт");
                                     case "10":
                                         $PROPER[277] = 144;                        
                                     break;
-                                    case "11":
-                                        $PROPER[277] = 145;                        
-                                    break;
+                                    // case "11":
+                                    //     $PROPER[277] = 145;                        
+                                    // break;
                                 } 
 
                                 foreach($Length2_prom as &$PROPER[283]){
@@ -1240,7 +1333,7 @@ $APPLICATION->SetTitle("Импорт");
                                     // добавляем нужное кол-во торговых предложений
                                 $arLoadProductArray = array(
                                     "IBLOCK_ID"      => 14, // IBLOCK торговых предложений
-                                    "NAME"           => $strin[9],
+                                    "NAME"           => $strin[8],
                                     "ACTIVE"         => "Y",
                                     'PROPERTY_VALUES'=> $PROPER
                                     
@@ -1266,7 +1359,7 @@ $APPLICATION->SetTitle("Импорт");
                                 CPrice::Add(
                                     array(
                                         "CURRENCY" => "RUB",
-                                        "PRICE" => $strin[7],
+                                        "PRICE" => $strin[6],
                                         "CATALOG_GROUP_ID" => 1,
                                         "PRODUCT_ID" => $product_offer_id
                                     )
@@ -1288,11 +1381,12 @@ $APPLICATION->SetTitle("Импорт");
                         $PROPER[284] = null;
                         $PROPER[285] = null;
                         
+                        
 
                         // добавляем нужное кол-во торговых предложений
                         $arLoadProductArray = array(
                         "IBLOCK_ID"      => 14, // IBLOCK торговых предложений
-                        "NAME"           => $strin[9],
+                        "NAME"           => $strin[8],
                         "ACTIVE"         => "Y",
                         'PROPERTY_VALUES'=> $PROPER
 
@@ -1317,7 +1411,7 @@ $APPLICATION->SetTitle("Импорт");
                         CPrice::Add(
                             array(
                                 "CURRENCY" => "RUB",
-                                "PRICE" => $strin[7],
+                                "PRICE" => $strin[6],
                                 "CATALOG_GROUP_ID" => 1,
                                 "PRODUCT_ID" => $product_offer_id
                             )
@@ -1325,19 +1419,51 @@ $APPLICATION->SetTitle("Импорт");
                     break;
                 }
             }
+            $PROPER[90] = null;
+            $PROPER[283] = null;
+            $PROPER[277] = null;
+            $PROPER[276] = null;
+            $PROPER[284] = null;
+            $PROPER[285] = null;
+            $PROP[291] = null;
 
         }
         
     echo"Товары добавлены!";
     }
-             
-   
    ?> 
-      
-    <form method="post"> 
-        <input  name="Link"/>   
-        <input type="submit" name="butimp" value="Импортировать товары" class="butimp"/> 
-    </form> 
+
+
+   <?
+   if($_FILES){
+    foreach ($_FILES["uploads"]["error"] as $key => $error) {
+        if ($error == UPLOAD_ERR_OK) {
+
+            if(!is_dir("/home/bitrix/www/upload/pics_catalog/".date("m.d.y"))) {
+                mkdir("/home/bitrix/www/upload/pics_catalog/".date("m.d.y"), 0700);
+            }
+
+            $tmp_name = $_FILES["uploads"]["tmp_name"][$key];
+            $name = "/home/bitrix/www/upload/pics_catalog/".date("m.d.y")."/". $_FILES["uploads"]["name"][$key];
+            move_uploaded_file($tmp_name, "$name");
+        }
+    }
+   }
+?>
+
+
+<h2>Загрузка файла</h2>
+<form method="post" enctype="multipart/form-data">
+
+    <input  name="Link"/>   
+    <input type="submit" name="butimp" value="Импортировать товары" class="butimp"/> <br>
+
+    <h2>Загрузка изображений</h2>
+    
+    <input type="file" name="uploads[]" multiple>
+    <input type="submit" value="Загрузить" />
+        
+    </form>  
 
 </body> 
 </html> 
